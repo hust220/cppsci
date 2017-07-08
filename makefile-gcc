@@ -1,0 +1,73 @@
+FLAGS :=  -std=c++11 -lfftw3 -lrt -fopenmp -lmkl_core -liomp5 -lmkl_intel_thread -lmkl_intel_lp64
+
+#debug for vtune and some vectorization report
+ifeq (true,${INFO})
+	FLAGS        := $(FLAGS) -DJN_SHOW_INFO
+endif
+
+ifeq (true,${ROME_DEBUG})
+	BUILD_PREFIX := build/gcc/debug
+	#DEBUG     := -g -debug inline-debug-info -qopt-report-phase=vec -qopt-report=5
+	FLAGS        := $(FLAGS) -O3 -g #-debug 
+else
+	BUILD_PREFIX := build/gcc/release
+	FLAGS        := $(FLAGS) -DNDEBUG -O3
+endif
+
+SRC_DIR   := src
+TEST_DIR  := test
+APPS_DIR  := apps
+BIN_DIR   := bin
+
+BUILD_DIR := $(addprefix $(BUILD_PREFIX)/, $(SRC_DIR) $(TEST_DIR) $(APPS_DIR))
+
+SRC_CPP   := $(foreach sdir,$(SRC_DIR),  $(wildcard $(sdir)/*.cpp))
+RES_CPP   := $(foreach sdir,$(SRC_DIR),  $(wildcard $(sdir)/res_*.cpp))
+TEST_CPP  := $(foreach sdir,$(TEST_DIR), $(wildcard $(sdir)/*.cpp))
+APPS_CPP  := $(foreach sdir,$(APPS_DIR), $(wildcard $(sdir)/*.cpp))
+OTHER_CPP := $(filter-out $(RES_CPP), $(SRC_CPP))
+
+SRC_OBJ   := $(patsubst %.cpp, $(BUILD_PREFIX)/%.o, $(SRC_CPP))
+RES_OBJ   := $(patsubst %.cpp, $(BUILD_PREFIX)/%.o, $(RES_CPP))
+TEST_OBJ  := $(patsubst %.cpp, $(BUILD_PREFIX)/%.o, $(TEST_CPP))
+APPS_OBJ  := $(patsubst %.cpp, $(BUILD_PREFIX)/%.o, $(APPS_CPP))
+OTHER_OBJ := $(patsubst %.cpp, $(BUILD_PREFIX)/%.o, $(OTHER_CPP))
+
+ALL_APPS  := $(notdir $(patsubst %.cpp, %, $(APPS_CPP))) test
+
+vpath %.cpp $(SRC_DIR) $(TEST_DIR) $(APPS_DIR)
+
+define make-goal
+
+$1/%.o: %.cpp
+	g++ $(FLAGS) $(MACROS) $(OFFLOAD) -c $$< -o $$@
+
+$1/%.o: %.cc
+	g++ $(FLAGS) $(MACROS) $(OFFLOAD) -c $$< -o $$@
+
+endef
+
+$(foreach bdir,$(BUILD_DIR),$(eval $(call make-goal,$(bdir))))
+
+.PHONY: all checkdirs clean $(ALL_APPS)
+
+all: $(ALL_APPS)
+
+rome_res: checkdirs $(SRC_OBJ) $(BUILD_PREFIX)/$(APPS_DIR)/rome_res.o
+	g++ $(FLAGS) $(MACROS) $(OFFLOAD) $(BUILD_PREFIX)/$(APPS_DIR)/$@.o $(RES_OBJ) $(OTHER_OBJ) -o bin/$@
+
+test: checkdirs $(TEST_OBJ) $(SRC_OBJ)
+	g++ $(FLAGS) $(MACROS) $(OFFLOAD) $(TEST_OBJ) $(SRC_OBJ) -o bin/$@
+
+checkdirs: $(BUILD_DIR) $(BIN_DIR)
+
+$(BUILD_DIR):
+	@mkdir -p $@
+
+$(BIN_DIR):
+	@mkdir bin
+
+clean:
+	@rm -rf bin build
+
+
