@@ -1,7 +1,7 @@
 /***************************************************************************
  *
- * Authors: "Jiayi (Timmy) Wu, Yongbei(Glow) Ma, Youdong (Jack) Mao"
- * Dana-Farber Cancer Institute, Harvard Medical School and Peking University
+ * Authors: "Jiayi (Timmy) Wu, Jian Wang"
+ * 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

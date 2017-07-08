@@ -1,7 +1,7 @@
 /***************************************************************************
  *
- * Authors: "Yongbei(Glow) Ma,Jiayi (Timmy) Wu, Youdong (Jack) Mao"
- * Dana-Farber Cancer Institute, Harvard Medical School and Peking University
+ * Authors: "Jian Wang"
+ * 
  * Authors: "Brett, Bevin"
  * Intel Corporation
  *
